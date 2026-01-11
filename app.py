@@ -42,6 +42,8 @@ def predict_survival(patient_data):
     df_input = df_input[training_columns]
 
     prediction = model.predict(df_input)[0]
+    print("Input:", patient_data)
+    print("Predicted Survival Months:", prediction)
     return round(float(prediction), 1)
 
 # -------------------------------------------------
@@ -89,3 +91,4 @@ def index():
 # -------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)
+
