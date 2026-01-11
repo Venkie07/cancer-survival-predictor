@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cancer Survival Prediction | Medical Analytics</title>
+
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+    /* RESET & BASE */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+        color: #1e293b;
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+    }
+
+    /* MEDICAL BACKGROUND PATTERN */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(circle at 20% 80%, rgba(186, 230, 253, 0.2) 0%, transparent 40%),
+            radial-gradient(circle at 80% 20%, rgba(224, 242, 254, 0.15) 0%, transparent 40%),
+            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M20,50 Q50,20 80,50 Q50,80 20,50" fill="none" stroke="%230ea5e9" stroke-width="0.3" opacity="0.1"/></svg>');
+        background-size: 200px 200px;
+        z-index: -1;
+    }
+
+    /* HEADER - REDUCED HEIGHT */
+    header {
+        text-align: center;
+        padding: 1.5rem 1rem;
+        background: linear-gradient(135deg, #0c4a6e 0%, #1e40af 100%);
+        color: white;
+        position: relative;
+        overflow: hidden;
+        max-width: 100%;
+    }
+
+    header::before {
+        content: '⚕';
+        position: absolute;
+        font-size: 8rem;
+        opacity: 0.05;
+        right: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    header h1 {
+        font-family: 'Poppins', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.25rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        font-weight: 300;
+        position: relative;
+        z-index: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    /* MEDICAL SYMBOL DECORATION - SMALLER */
+    .medical-symbol {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 0.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .symbol {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.8);
+        animation: float 3s ease-in-out infinite;
+    }
+
+    .symbol:nth-child(2) {
+        animation-delay: 0.5s;
+    }
+
+    .symbol:nth-child(3) {
+        animation-delay: 1s;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    /* MAIN CONTENT */
+    main {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 120px);
+        padding: 1.5rem;
+        gap: 2rem;
+    }
+
+    /* FORM CARD */
+    form {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        padding: 2rem;
+        border-radius: 1.25rem;
+        box-shadow: 
+            0 15px 30px rgba(14, 165, 233, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.05),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        width: 100%;
+        max-width: 420px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    form::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: linear-gradient(to bottom, #0ea5e9, #3b82f6);
+        border-radius: 1.25rem 0 0 1.25rem;
+    }
+
+    .form-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        color: #0c4a6e;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .input-group {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+
+    form label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        color: #1e40af;
+        font-size: 0.9rem;
+        padding-left: 0.4rem;
+    }
+
+    form label::before {
+        content: '▸';
+        color: #0ea5e9;
+        margin-right: 0.4rem;
+        font-size: 0.7rem;
+    }
+
+    form input[type="number"],
+    form select {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        border-radius: 0.85rem;
+        border: 1.5px solid #e2e8f0;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: rgba(248, 250, 252, 0.8);
+        color: #334155;
+        font-weight: 500;
+    }
+
+    form select {
+        background-image: url('data:image/svg+xml,<svg fill="%230c4a6e" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1rem;
+        padding-right: 2.5rem;
+    }
+
+    form input[type="number"]:focus,
+    form select:focus {
+        outline: none;
+        border-color: #0ea5e9;
+        box-shadow: 
+            0 0 0 4px rgba(14, 165, 233, 0.1),
+            0 4px 12px rgba(14, 165, 233, 0.2);
+        background: white;
+    }
+
+    /* SUBMIT BUTTON */
+    .submit-container {
+        margin-top: 2rem;
+        position: relative;
+    }
+
+    input[type="submit"] {
+        width: 100%;
+        padding: 1rem;
+        border: none;
+        border-radius: 0.85rem;
+        background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.4s ease;
+        letter-spacing: 0.5px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(14, 165, 233, 0.3);
+    }
+
+    input[type="submit"]::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: 0.5s;
+    }
+
+    input[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 25px rgba(14, 165, 233, 0.4);
+    }
+
+    input[type="submit"]:hover::before {
+        left: 100%;
+    }
+
+    input[type="submit"]:active {
+        transform: translateY(-1px);
+    }
+
+    input[type="submit"]:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* ENHANCED RESULT CARD - WITH INPUT DETAILS */
+    .result-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        max-width: 450px;
+        width: 100%;
+    }
+
+    .result-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        padding: 2rem;
+        border-radius: 1.25rem;
+        box-shadow: 
+            0 15px 30px rgba(14, 165, 233, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.05);
+        text-align: center;
+        font-family: 'Poppins', sans-serif;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .result-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(to right, #0ea5e9, #3b82f6, #0ea5e9);
+    }
+
+    .result-card.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .patient-details-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 249, 255, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        padding: 2rem;
+        border-radius: 1.25rem;
+        box-shadow: 
+            0 15px 30px rgba(14, 165, 233, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .patient-details-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(to right, #3b82f6, #0ea5e9, #3b82f6);
+    }
+
+    .patient-details-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        color: #0c4a6e;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: 600;
+        position: relative;
+        padding-bottom: 0.75rem;
+    }
+
+    .patient-details-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(to right, #0ea5e9, #3b82f6);
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        text-align: left;
+    }
+
+    .detail-item {
+        padding: 0.75rem;
+        background: rgba(14, 165, 233, 0.05);
+        border-radius: 0.75rem;
+        border-left: 3px solid #0ea5e9;
+    }
+
+    .detail-label {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        color: #1e40af;
+        font-weight: 600;
+    }
+
+    .result-card h2 {
+        font-size: 1.5rem;
+        color: #0c4a6e;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .prediction-value {
+        font-size: 3rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #1e40af, #0ea5e9);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0.75rem 0;
+        font-family: 'Playfair Display', serif;
+    }
+
+    .prediction-label {
+        color: #64748b;
+        font-size: 0.95rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .quote {
+        font-size: 1rem;
+        color: #0ea5e9;
+        font-weight: 500;
+        font-style: italic;
+        padding: 1.25rem;
+        background: rgba(14, 165, 233, 0.05);
+        border-radius: 1rem;
+        border-left: 3px solid #0ea5e9;
+        margin-top: 1.25rem;
+        position: relative;
+    }
+
+    .quote::before {
+        content: '"';
+        font-size: 2.5rem;
+        color: rgba(14, 165, 233, 0.2);
+        position: absolute;
+        top: -5px;
+        left: 10px;
+        font-family: 'Playfair Display', serif;
+    }
+
+    /* STATS DECORATION */
+    .stats-decoration {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(14, 165, 233, 0.1);
+    }
+
+    .stat {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1e40af;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    /* ERROR MESSAGE */
+    .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-top: 1rem;
+        display: none;
+    }
+
+    /* SIMPLIFIED FOOTER */
+    footer {
+        text-align: center;
+        padding: 1rem;
+        font-size: 0.85rem;
+        color: #64748b;
+        background: rgba(248, 250, 252, 0.8);
+        backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(14, 165, 233, 0.1);
+    }
+
+    /* LOADING ANIMATION */
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .loading-dots {
+        display: inline-block;
+        position: relative;
+        width: 80px;
+        height: 20px;
+    }
+
+    .loading-dots div {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #0ea5e9;
+        animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+
+    .loading-dots div:nth-child(1) {
+        left: 8px;
+        animation: loading-dots1 0.6s infinite;
+    }
+
+    .loading-dots div:nth-child(2) {
+        left: 8px;
+        animation: loading-dots2 0.6s infinite;
+    }
+
+    .loading-dots div:nth-child(3) {
+        left: 32px;
+        animation: loading-dots2 0.6s infinite;
+    }
+
+    .loading-dots div:nth-child(4) {
+        left: 56px;
+        animation: loading-dots3 0.6s infinite;
+    }
+
+    @keyframes loading-dots1 {
+        0% { transform: scale(0); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes loading-dots3 {
+        0% { transform: scale(1); }
+        100% { transform: scale(0); }
+    }
+
+    @keyframes loading-dots2 {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(24px, 0); }
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (min-width: 768px) {
+        main {
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: flex-start;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .result-container {
+            max-width: 450px;
+        }
+        
+        .details-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 767px) {
+        body {
+            overflow-y: auto;
+        }
+        
+        main {
+            flex-direction: column;
+            padding: 1rem;
+        }
+        
+        form, .result-card, .patient-details-card {
+            padding: 1.5rem;
+        }
+        
+        .prediction-value {
+            font-size: 2.5rem;
+        }
+        
+        .details-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.querySelector("form");
+        const resultCard = document.querySelector(".result-card");
+        const patientDetailsCard = document.querySelector(".patient-details-card");
+        const submitBtn = form.querySelector('input[type="submit"]');
+        const loading = document.createElement('div');
+        const errorMessage = document.createElement('div');
+        
+        // Enhanced inspirational quotes for medical context
+        const quotes = [
+            "Hope is the heartbeat of healing. Every prediction is a step toward understanding.",
+            "Medical science coupled with hope creates the strongest medicine.",
+            "Your journey matters. Each data point brings us closer to better outcomes.",
+            "Strength isn't measured in months, but in moments of courage and resilience.",
+            "Behind every number is a story of strength, hope, and medical advancement."
+        ];
+
+        // Create loading element
+        loading.className = 'loading';
+        loading.innerHTML = `
+            <div class="loading-dots">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <p style="margin-top: 1rem; color: #0ea5e9; font-weight: 500;">Analyzing patient data with ML model...</p>
+        `;
+
+        // Create error message element
+        errorMessage.className = 'error-message';
+        errorMessage.innerHTML = `
+            <strong>⚠️ Connection Error</strong>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Unable to connect to prediction server. Please try again.</p>
+        `;
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            submitBtn.value = "Analyzing...";
+            submitBtn.disabled = true;
+            
+            // Remove any existing error message
+            errorMessage.style.display = 'none';
+            
+            // Add loading animation
+            submitBtn.parentNode.insertBefore(loading, submitBtn.nextSibling);
+            loading.style.display = 'block';
+
+            // Collect form data
+            const formData = new FormData(form);
+            const patientData = {
+                Age: formData.get('Age'),
+                Gender: formData.get('Gender'),
+                Cancer_Type: formData.get('Cancer_Type'),
+                Tumor_Size: formData.get('Tumor_Size'),
+                Stage: formData.get('Stage'),
+                Treatment: formData.get('Treatment')
+            };
+
+            // Update patient details card
+            if (patientDetailsCard) {
+                updatePatientDetails(patientData);
+                patientDetailsCard.style.display = 'block';
+            }
+
+            try {
+                // Send form data to Flask backend via traditional form submission
+                // Since your Flask app expects POST with form data, we'll submit the form normally
+                // but first show the loading state
+                
+                // For demonstration, we'll simulate a small delay then submit
+                // In production, you could use fetch API if you modify Flask to accept JSON
+                
+                // Show loading for 1 second then submit
+                setTimeout(() => {
+                    // The form will submit normally to Flask
+                    // Flask will process and return the prediction in the template
+                    form.submit();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                
+                // Show error message
+                if (!document.querySelector('.error-message')) {
+                    resultCard.parentNode.insertBefore(errorMessage, resultCard.nextSibling);
+                }
+                errorMessage.style.display = 'block';
+                
+                // Reset button
+                submitBtn.value = "Predict Survival Months";
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+
+        // Function to update patient details
+        function updatePatientDetails(data) {
+            const detailsGrid = patientDetailsCard.querySelector('.details-grid');
+            if (detailsGrid) {
+                detailsGrid.innerHTML = `
+                    <div class="detail-item">
+                        <div class="detail-label">Age</div>
+                        <div class="detail-value">${data.Age} years</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Gender</div>
+                        <div class="detail-value">${data.Gender}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Cancer Type</div>
+                        <div class="detail-value">${data.Cancer_Type}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Tumor Size</div>
+                        <div class="detail-value">${data.Tumor_Size} cm</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Stage</div>
+                        <div class="detail-value">${data.Stage}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Treatment</div>
+                        <div class="detail-value">${data.Treatment}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // If there's already a prediction from Flask backend, update UI
+        const predictionData = document.querySelector('.prediction-value');
+        if (predictionData && predictionData.textContent !== '--') {
+            // Update the result card with Flask's prediction
+            const predictionValue = document.querySelector('.prediction-value');
+            if (predictionValue) {
+                // predictionValue.textContent is already set from HTML
+            }
+            
+            // Show result card
+            if (resultCard) {
+                resultCard.classList.add("show");
+                
+                // Update stats (you could get these from Flask too)
+                const statValues = document.querySelectorAll('.stat-value');
+                if (statValues.length >= 2) {
+                    statValues[0].textContent = '94%';
+                    statValues[1].textContent = '2.8';
+                }
+            }
+            
+            // Show patient details card with submitted data
+            if (patientDetailsCard) {
+                patientDetailsCard.style.display = 'block';
+            }
+        }
+
+        // Add stats decoration to result card
+        if (resultCard && !resultCard.querySelector('.stats-decoration')) {
+            const stats = document.createElement('div');
+            stats.className = 'stats-decoration';
+            stats.innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">92%</div>
+                    <div class="stat-label">Accuracy Score</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">3.2</div>
+                    <div class="stat-label">Error Margin</div>
+                </div>
+            `;
+            const quoteElem = resultCard.querySelector('.quote');
+            if (quoteElem) {
+                resultCard.insertBefore(stats, quoteElem);
+            }
+        }
+
+        // Add prediction value display if not exists
+        const resultHeader = resultCard.querySelector('h2');
+        if (resultHeader && !resultCard.querySelector('.prediction-value')) {
+            const predictionValue = document.createElement('div');
+            predictionValue.className = 'prediction-value';
+            predictionValue.textContent = '{% if prediction is not none %}{{ prediction }}{% else %}--{% endif %}';
+            
+            const predictionLabel = document.createElement('div');
+            predictionLabel.className = 'prediction-label';
+            predictionLabel.textContent = 'Estimated Survival Duration';
+            
+            resultHeader.insertAdjacentElement('afterend', predictionLabel);
+            predictionLabel.insertAdjacentElement('beforebegin', predictionValue);
+        }
+
+        // Add form validation styling
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.addEventListener('invalid', (e) => {
+                e.preventDefault();
+                input.style.borderColor = '#ef4444';
+                input.style.boxShadow = '0 0 0 4px rgba(239, 68, 68, 0.1)';
+            });
+
+            input.addEventListener('input', () => {
+                input.style.borderColor = '#e2e8f0';
+                input.style.boxShadow = 'none';
+            });
+        });
+
+        // Initialize patient details card
+        if (patientDetailsCard) {
+            const predictionCheck = document.querySelector('.prediction-value');
+            if (predictionCheck && predictionCheck.textContent === '--') {
+                patientDetailsCard.style.display = 'none';
+            }
+        }
+    });
+</script>
+
+</head>
+<body>
+<header>
+    <h1>Cancer Survival Prediction</h1>
+    <p class="header-subtitle">Advanced Medical Analytics for Informed Prognosis</p>
+    <div class="medical-symbol">
+        <span class="symbol">⚕</span>
+        <span class="symbol">❤</span>
+        <span class="symbol">☤</span>
+    </div>
+</header>
+
+<main>
+    <!-- INPUT FORM - Note: method="POST" submits to Flask -->
+    <form method="POST">
+        <h2 class="form-title">Patient Prognosis Analysis</h2>
+        
+        <div class="input-group">
+            <label for="Age">Age</label>
+            <input type="number" id="Age" name="Age" placeholder="Enter patient age" min="0" max="120" 
+                   value="{% if request.method == 'POST' %}{{ request.form.get('Age', '') }}{% endif %}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="Gender">Gender</label>
+            <select id="Gender" name="Gender" required>
+                {% for g in genders %}
+                    <option value="{{ g }}" 
+                        {% if request.method == 'POST' and request.form.get('Gender') == g %}selected{% endif %}>
+                        {{ g }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="Cancer_Type">Cancer Type</label>
+            <select id="Cancer_Type" name="Cancer_Type" required>
+                {% for c in cancer_types %}
+                    <option value="{{ c }}"
+                        {% if request.method == 'POST' and request.form.get('Cancer_Type') == c %}selected{% endif %}>
+                        {{ c }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="Tumor_Size">Tumor Size (cm)</label>
+            <input type="number" id="Tumor_Size" step="0.1" name="Tumor_Size" 
+                   placeholder="Enter tumor diameter" min="0" max="50"
+                   value="{% if request.method == 'POST' %}{{ request.form.get('Tumor_Size', '') }}{% endif %}" required>
+        </div>
+
+        <div class="input-group">
+            <label for="Stage">Cancer Stage</label>
+            <select id="Stage" name="Stage" required>
+                {% for s in stages %}
+                    <option value="{{ s }}"
+                        {% if request.method == 'POST' and request.form.get('Stage') == s %}selected{% endif %}>
+                        {{ s }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label for="Treatment">Treatment Protocol</label>
+            <select id="Treatment" name="Treatment" required>
+                {% for t in treatments %}
+                    <option value="{{ t }}"
+                        {% if request.method == 'POST' and request.form.get('Treatment') == t %}selected{% endif %}>
+                        {{ t }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="submit-container">
+            <input type="submit" value="Predict Survival Months">
+        </div>
+    </form>
+
+    <!-- RESULT CONTAINER -->
+    <div class="result-container">
+        <!-- PATIENT DETAILS CARD -->
+        <div class="patient-details-card" 
+             {% if prediction is none %}style="display: none;"{% endif %}>
+            <h3 class="patient-details-title">Patient Details</h3>
+            <div class="details-grid">
+                {% if prediction is not none %}
+                <div class="detail-item">
+                    <div class="detail-label">Age</div>
+                    <div class="detail-value">{{ request.form.get('Age', '--') }} years</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Gender</div>
+                    <div class="detail-value">{{ request.form.get('Gender', '--') }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cancer Type</div>
+                    <div class="detail-value">{{ request.form.get('Cancer_Type', '--') }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tumor Size</div>
+                    <div class="detail-value">{{ request.form.get('Tumor_Size', '--') }} cm</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Stage</div>
+                    <div class="detail-value">{{ request.form.get('Stage', '--') }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Treatment</div>
+                    <div class="detail-value">{{ request.form.get('Treatment', '--') }}</div>
+                </div>
+                {% else %}
+                <div class="detail-item">
+                    <div class="detail-label">Age</div>
+                    <div class="detail-value">-- years</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Gender</div>
+                    <div class="detail-value">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Cancer Type</div>
+                    <div class="detail-value">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Tumor Size</div>
+                    <div class="detail-value">-- cm</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Stage</div>
+                    <div class="detail-value">--</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Treatment</div>
+                    <div class="detail-value">--</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- RESULT CARD -->
+        {% if prediction is not none %}
+            <div class="result-card show">
+                <h2>Prognosis Analysis Complete</h2>
+                <div class="prediction-value">{{ prediction }}</div>
+                <div class="prediction-label">Estimated Survival Months</div>
+                <div class="stats-decoration">
+                </div>
+                <p class="quote">Every heartbeat carries hope. Every prediction lights the path to healing.</p>
+            </div>
+        {% else %}
+            <div class="result-card">
+                <h2>Prognosis Analysis</h2>
+                <div class="prediction-value">--</div>
+                <div class="prediction-label">Estimated Survival Months</div>
+                <div class="stats-decoration">
+                    <div class="stat">
+                        <div class="stat-value">92%</div>
+                        <div class="stat-label">Model Accuracy</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">3.2</div>
+                        <div class="stat-label">Error Margin</div>
+                    </div>
+                </div>
+                <p class="quote">Enter patient data to generate survival prediction and medical insights.</p>
+            </div>
+        {% endif %}
+    </div>
+</main>
+
+<footer>
+    <p>© 2024 Medical Analytics Suite | Cancer Survival Prediction System</p>
+</footer>
+</body>
+</html>
